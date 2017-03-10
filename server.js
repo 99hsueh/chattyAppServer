@@ -1,5 +1,6 @@
 const express = require('express');
 const SocketServer = require('ws');
+const randomColor = require('randomColor');
 
 // Set the port to 3001
 const PORT = 3001;
@@ -13,46 +14,54 @@ const server = express()
 // Create the WebSockets server
 const wss = new SocketServer.Server({ server });
 const uuid = require('node-uuid');
+const usersOnline = {type: 'displayUsers'};
+const numOfClients = ["default"];
+
+//on client connections
 // Set up a callback that will run when a client connects to the server
 // When a client connects they are assigned a socket, represented by
 // the ws parameter in the callback.
-const usersOnline = {type: "displayUsers"};
-const numOfClients = ["default"];
-
 wss.on('connection', function connection(ws) {
   console.log('client connected');
+  const setColor = {
+    colors: randomColor(),
+    type: 'color',
+    id: uuid.v1()
+  };
+  //assign users with diffColor
+  ws.send(JSON.stringify(setColor));
+  console.log(setColor);
+  //for displaying number of total connected users
   numOfClients.push(wss.clients);
   usersOnline.content = `${numOfClients.length - 1} users online`
   console.log(usersOnline.content);
   wss.clients.forEach(function msgEach(client) {
     if (client.readyState === SocketServer.OPEN) {
       client.send(JSON.stringify(usersOnline));
-      console.log("send to client display # of user");
+      console.log('send to client display # of user');
     }
   });
 
-
-  //push client connections to clients array
-  //if clients connect or disconnect, broadcast change to all users
+  //for receiving msg/notif from client and broadcast to all connected users
   ws.on('message', function incoming(messageJson) {
     let message = JSON.parse(messageJson);
-    if (message.type === "postMessage"){
-      message.type = "incomingMessage"
+    if (message.type === 'postMessage'){
+      message.type = 'incomingMessage'
       message.id = uuid.v1();
       wss.clients.forEach(function msgEach(client) {
         if (client.readyState === SocketServer.OPEN) {
           client.send(JSON.stringify(message));
-          console.log("send to client message", message);
+          console.log('send to client message', message);
         }
       });
     }
-    if (message.type === "postNotification") {
-      message.type = "incomingNotification"
+    if (message.type === 'postNotification') {
+      message.type = 'incomingNotification'
       message.id = uuid.v1();
       wss.clients.forEach(function notifyEach(client) {
         if (client.readyState === SocketServer.OPEN) {
           client.send(JSON.stringify(message));
-          console.log("send to client notification", message);
+          console.log('send to client notification', message);
         }
       });
     }
@@ -64,11 +73,11 @@ wss.on('connection', function connection(ws) {
     usersOnline.content = `${numOfClients.length - 1} users online`
     console.log(usersOnline.content);
     wss.clients.forEach(function msgEach(client) {
-    if (client.readyState === SocketServer.OPEN) {
-      client.send(JSON.stringify(usersOnline));
-      console.log("send to client display # of user", usersOnline);
-    }
-  });
+      if (client.readyState === SocketServer.OPEN) {
+        client.send(JSON.stringify(usersOnline));
+        console.log('send to client display # of user', usersOnline);
+      }
+    });
   });
 });
 
