@@ -16,10 +16,24 @@ const uuid = require('node-uuid');
 // Set up a callback that will run when a client connects to the server
 // When a client connects they are assigned a socket, represented by
 // the ws parameter in the callback.
+const usersOnline = {type: "displayUsers"};
+const numOfClients = ["default"];
 
 wss.on('connection', function connection(ws) {
   console.log('client connected');
+  numOfClients.push(wss.clients);
+  usersOnline.content = `${numOfClients.length - 1} users online`
+  console.log(usersOnline.content);
+  wss.clients.forEach(function msgEach(client) {
+    if (client.readyState === SocketServer.OPEN) {
+      client.send(JSON.stringify(usersOnline));
+      console.log("send to client display # of user");
+    }
+  });
+
+
   //push client connections to clients array
+  //if clients connect or disconnect, broadcast change to all users
   ws.on('message', function incoming(messageJson) {
     let message = JSON.parse(messageJson);
     if (message.type === "postMessage"){
@@ -44,5 +58,18 @@ wss.on('connection', function connection(ws) {
     }
   });
   // Set up a callback for when a client closes the socket. This usually means they closed their browser.
-  ws.on('close', () => console.log('Client disconnected'));
+  ws.on('close', () => {
+    console.log('Client disconnected');
+    numOfClients.pop();
+    usersOnline.content = `${numOfClients.length - 1} users online`
+    console.log(usersOnline.content);
+    wss.clients.forEach(function msgEach(client) {
+    if (client.readyState === SocketServer.OPEN) {
+      client.send(JSON.stringify(usersOnline));
+      console.log("send to client display # of user", usersOnline);
+    }
+  });
+  });
 });
+
+
