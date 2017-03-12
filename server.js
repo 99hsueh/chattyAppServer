@@ -2,6 +2,10 @@ const express = require('express');
 const SocketServer = require('ws');
 const randomColor = require('randomColor');
 
+//add regex
+// /(http|https)+.+(.jpg|.png)\b/g
+
+
 // Set the port to 3001
 const PORT = 3001;
 
@@ -30,7 +34,6 @@ wss.on('connection', function connection(ws) {
   };
   //assign users with diffColor
   ws.send(JSON.stringify(setColor));
-  console.log(setColor);
   //for displaying number of total connected users
   numOfClients.push(wss.clients);
   usersOnline.content = `${numOfClients.length - 1} users online`
@@ -38,7 +41,6 @@ wss.on('connection', function connection(ws) {
   wss.clients.forEach(function msgEach(client) {
     if (client.readyState === SocketServer.OPEN) {
       client.send(JSON.stringify(usersOnline));
-      console.log('send to client display # of user');
     }
   });
 
@@ -51,7 +53,6 @@ wss.on('connection', function connection(ws) {
       wss.clients.forEach(function msgEach(client) {
         if (client.readyState === SocketServer.OPEN) {
           client.send(JSON.stringify(message));
-          console.log('send to client message', message);
         }
       });
     }
@@ -61,12 +62,11 @@ wss.on('connection', function connection(ws) {
       wss.clients.forEach(function notifyEach(client) {
         if (client.readyState === SocketServer.OPEN) {
           client.send(JSON.stringify(message));
-          console.log('send to client notification', message);
         }
       });
     }
   });
-  // Set up a callback for when a client closes the socket. This usually means they closed their browser.
+  // Set up a callback for when a client closes the socket.
   ws.on('close', () => {
     console.log('Client disconnected');
     numOfClients.pop();
@@ -75,7 +75,6 @@ wss.on('connection', function connection(ws) {
     wss.clients.forEach(function msgEach(client) {
       if (client.readyState === SocketServer.OPEN) {
         client.send(JSON.stringify(usersOnline));
-        console.log('send to client display # of user', usersOnline);
       }
     });
   });
